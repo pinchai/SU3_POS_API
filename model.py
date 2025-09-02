@@ -1,12 +1,5 @@
-from flask import Flask
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+from app import db
 
 
 class Branch(db.Model):
@@ -63,12 +56,3 @@ class SaleItem(db.Model):
     cost = db.Column(db.Numeric(10, 2), nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
     total = db.Column(db.Numeric(12, 2), nullable=False)
-
-
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
-
-
-if __name__ == '__main__':
-    app.run()
