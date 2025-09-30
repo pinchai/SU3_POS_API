@@ -1,0 +1,113 @@
+from app import app, db
+from sqlalchemy import text
+from flask import request
+
+
+@app.get('/user/list')
+def user():
+    sql = text("""SELECT * FROM  user""")
+    result = db.session.execute(sql).fetchall()
+    rows = [dict(row._mapping) for row in result]
+    return rows, 200
+
+
+@app.get('/user/list-by-id/<int:user_id>')
+def user_by_id(user_id):
+    result = get_user_by_id(user_id)
+    return result
+
+
+@app.post('/user/create')
+def create_user():
+    form = request.get_json()
+    if not form:
+        return {"error": "No input data provided"}, 400
+    if not form.get('branch_id'):
+        return {"error": "Branch ID is required"}, 400
+    if not form.get('user_name'):
+        return {"error": "UserName is required"}, 400
+    if not form.get('password'):
+        return {"error": "Password is required"}, 400
+
+    branch_id = form.get('branch_id')
+    user_name = form.get('user_name')
+    password = form.get('password')
+    profile = form.get('profile')
+    sql = text(
+        """insert into user (branch_id, user_name, password, profile) 
+        values (:branch_id, :user_name, :password, :profile)""")
+    result = db.session.execute(sql,
+                                {
+                                    "branch_id": branch_id,
+                                    "user_name": user_name,
+                                    "password": password,
+                                    "profile": profile
+                                })
+    db.session.commit()
+    return {
+               "message": "User created",
+               "user": get_user_by_id(result.lastrowid)
+           }, 200
+
+
+@app.post('/user/update')
+def update_user():
+    form = request.get_json()
+    if not form:
+        return {"error": "No input data provided"}, 400
+    if not form.get('user_id'):
+        return {"error": "User ID is required"}, 400
+    if not form.get('branch_id'):
+        return {"error": "Branch ID is required"}, 400
+    if not form.get('user_name'):
+        return {"error": "UserName is required"}, 400
+    is_existing = get_user_by_id(form.get('user_id'))
+    if is_existing.get('error'):
+        return {"error": "User not found"}, 404
+
+    user_id = form.get('user_id')
+    branch_id = form.get('branch_id')
+    user_name = form.get('user_name')
+    sql = text(
+        """update user 
+        set branch_id = :branch_id, user_name = :user_name
+         where id = :user_id""")
+    result = db.session.execute(sql,
+                                {
+                                    "branch_id": branch_id,
+                                    "user_name": user_name,
+                                    "user_id": user_id,
+                                })
+    db.session.commit()
+    return {
+               "message": "User updated",
+               "user": get_user_by_id(user_id)
+           }, 200
+
+
+@app.post('/user/delete')
+def delete_user():
+    form = request.get_json()
+    if not form.get('user_id'):
+        return {"error": "User ID is required"}, 400
+    user_id = form.get('user_id')
+    sql = text(
+        """delete from user where id = :user_id""")
+    result = db.session.execute(sql,
+                                {
+                                    "user_id": user_id,
+                                })
+    db.session.commit()
+    return {
+               "message": "User deleted",
+           }, 200
+
+
+def get_user_by_id(user_id: int) -> dict:
+    sql = text("""SELECT * FROM  user WHERE  id = :user_id""")
+    result = db.session.execute(sql, {"user_id": user_id}).fetchone()
+    if result:
+        return dict(result._mapping)
+    return {
+        "error": "User not found"
+    }
