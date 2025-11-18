@@ -69,50 +69,71 @@ def product_product():
 @app.post('/product/update')
 def update_product():
     form = request.form
+    if not form:
+        return {"error": "No input data provided"}, 400
+    if not form.get('name'):
+        return {"error": "product name is required"}, 400
+    if not form.get('category_id'):
+        return {"error": "category_id is required"}, 400
+    if not form.get('cost'):
+        return {"error": "cost is required"}, 400
+    if not form.get('price'):
+        return {"error": "price is required"}, 400
+    if not form.get('product_id'):
+        return {"error": "product_id is required"}, 400
+
+    # check category
+    is_category_existing = get_category_by_id(form.get('category_id'))
+    if is_category_existing.get('error'):
+        return {"error": "Category not found"}, 404
+
+    is_existing = get_product_by_id(form.get('product_id'))
+    if is_existing.get('error'):
+        return {"error": "Product not found"}, 404
+
     image = request.files['image']
     file_name = None
     if image:
         file_name = image.filename
-        image.save(f'static/image/category/{file_name}')
+        image.save(f'static/image/product/{file_name}')
 
-    if not form:
-        return {"error": "No input data provided"}, 400
-    if not form.get('name'):
-        return {"error": "CategoryName is required"}, 400
-
+    product_name = form.get('name')
     category_id = form.get('category_id')
-    category_name = form.get('name')
+    cost = form.get('cost')
+    price = form.get('price')
+    product_id = form.get('product_id')
 
-    category = Product.query.get(category_id)
-    category.name = category_name
+    product = Product.query.get(product_id)
+    product.name = product_name
+    product.category_id = category_id
+    product.cost = cost
+    product.price = price
     if image:
-        category.image = file_name
-
-    # assert False, f"{file_name}, {category_name}"
+        product.image = file_name
     db.session.commit()
 
     return {
-               "message": "category updated",
-               "category": get_product_by_id(category_id)
+               "message": "product updated",
+               "product": get_product_by_id(product_id)
            }, 200
 
 
 @app.post('/product/delete')
 def delete_product():
     form = request.get_json()
-    if not form.get('category_id'):
-        return {"error": "Category ID is required"}, 400
-    is_existing = get_product_by_id(form.get('category_id'))
+    if not form.get('product_id'):
+        return {"error": "Product ID is required"}, 400
+    is_existing = get_product_by_id(form.get('product_id'))
     if is_existing.get('error'):
-        return {"error": "Category not found"}, 404
+        return {"error": "Product not found"}, 404
     
-    category_id = form.get('category_id')
-    category = Product.query.get(category_id)
-    db.session.delete(category)
+    product_id = form.get('product_id')
+    product = Product.query.get(product_id)
+    db.session.delete(product)
     db.session.commit()
 
     return {
-               "message": "category deleted",
+               "message": "product deleted",
            }, 200
 
 
