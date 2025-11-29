@@ -2,9 +2,11 @@ from app import app, db
 from sqlalchemy import text
 from flask import request
 from model.category import Category
+from flask_jwt_extended import jwt_required
 
 
 @app.get('/category/list')
+@jwt_required()
 def category():
     sql = text("""SELECT * FROM  category""")
     result = db.session.execute(sql).fetchall()
@@ -13,12 +15,14 @@ def category():
 
 
 @app.get('/category/list-by-id/<int:category_id>')
+@jwt_required()
 def category_by_id(category_id):
     result = get_category_by_id(category_id)
     return result
 
 
 @app.post('/category/create')
+@jwt_required()
 def create_category():
     form = request.form
     image = request.files['image']
@@ -48,6 +52,7 @@ def create_category():
 
 
 @app.post('/category/update')
+@jwt_required()
 def update_category():
     form = request.form
     image = request.files['image']
@@ -79,6 +84,7 @@ def update_category():
 
 
 @app.post('/category/delete')
+@jwt_required()
 def delete_category():
     form = request.get_json()
     if not form.get('category_id'):
